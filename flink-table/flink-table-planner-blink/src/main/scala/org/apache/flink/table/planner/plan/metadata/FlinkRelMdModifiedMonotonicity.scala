@@ -23,7 +23,7 @@ import org.apache.flink.table.planner.functions.sql.SqlIncrSumAggFunction
 import org.apache.flink.table.planner.functions.utils.ScalarSqlFunction
 import org.apache.flink.table.planner.plan.`trait`.RelModifiedMonotonicity
 import org.apache.flink.table.planner.plan.metadata.FlinkMetadata.ModifiedMonotonicity
-import org.apache.flink.table.planner.plan.nodes.calcite.{Expand, Rank, WindowAggregate}
+import org.apache.flink.table.planner.plan.nodes.calcite.{Expand, Rank, TableAggregate, WindowAggregate}
 import org.apache.flink.table.planner.plan.nodes.logical._
 import org.apache.flink.table.planner.plan.nodes.physical.batch.{BatchExecCorrelate, BatchExecGroupAggregateBase}
 import org.apache.flink.table.planner.plan.nodes.physical.stream._
@@ -227,12 +227,24 @@ class FlinkRelMdModifiedMonotonicity private extends MetadataHandler[ModifiedMon
   }
 
   def getRelModifiedMonotonicity(
+      rel: TableAggregate, mq: RelMetadataQuery): RelModifiedMonotonicity = {
+    getRelModifiedMonotonicityOnAggregate(rel.getInput, mq, rel.getAggCallList.toList,
+      rel.getGroupSet.toArray)
+  }
+
+  def getRelModifiedMonotonicity(
       rel: BatchExecGroupAggregateBase,
       mq: RelMetadataQuery): RelModifiedMonotonicity = null
 
   def getRelModifiedMonotonicity(
       rel: StreamExecGroupAggregate,
       mq: RelMetadataQuery): RelModifiedMonotonicity = {
+    getRelModifiedMonotonicityOnAggregate(rel.getInput, mq, rel.aggCalls.toList, rel.grouping)
+  }
+
+  def getRelModifiedMonotonicity(
+    rel: StreamExecGroupTableAggregate,
+    mq: RelMetadataQuery): RelModifiedMonotonicity = {
     getRelModifiedMonotonicityOnAggregate(rel.getInput, mq, rel.aggCalls.toList, rel.grouping)
   }
 
